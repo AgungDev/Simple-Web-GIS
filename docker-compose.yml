@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  app:
+    build: .
+    container_name: laravel-webgis
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/var/www
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-webgis
+    restart: always
+    environment:
+      POSTGRES_DB: webgis
+      POSTGRES_USER: webgis
+      POSTGRES_PASSWORD: webgis
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:
