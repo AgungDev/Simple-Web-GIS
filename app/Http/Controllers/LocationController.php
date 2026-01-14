@@ -9,7 +9,21 @@ class LocationController extends Controller
 {
     public function store(Request $request)
     {
-        Location::create($request->all());
+        $data = $request->validate([
+            'nama' => 'required|string',
+            'latitude' => 'required|numeric',
+            'longitude' => 'required|numeric',
+            'description' => 'nullable|string',
+            'image' => 'nullable|image|max:2048'
+        ]);
+
+        if ($request->hasFile('image')) {
+            $path = $request->file('image')->store('locations', 'public');
+            $data['image'] = $path;
+        }
+
+        Location::create($data);
+
         return response()->json(['status' => 'ok']);
     }
 

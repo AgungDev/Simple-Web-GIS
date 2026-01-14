@@ -2,94 +2,45 @@
 <html>
 
 <head>
-    <title>Input Data Web GIS</title>
+    <title>Main Map</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="stylesheet" href="{{ asset('css/leaflet.css') }}">
     <link rel="stylesheet" href="{{ asset('css/L.Control.Layers.Tree.css') }}">
     <link rel="stylesheet" href="{{ asset('css/qgis2web.css') }}">
     <link rel="stylesheet" href="{{ asset('css/fontawesome-all.min.css') }}">
     <link rel="stylesheet" href="{{ asset('css/leaflet.photon.css') }}">
     <style>
-        #map {
-            height: 400px;
-        }
-
         html,
         body {
-            height: auto;
-            overflow-y: auto;
+            height: 100%;
+            margin: 0;
+        }
+
+        #map {
+            height: calc(100vh - 60px);
+        }
+
+        .app-header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
         }
     </style>
 </head>
 
 <body>
 
-    <div class="container mt-4">
-        <div class="d-flex align-items-center mb-3">
-            <a class="btn btn-secondary me-3" href="/">Back</a>
-            <h3 class="m-0">Peta Utama</h3>
-        </div>
-
-        <div class="row">
-            <div class="col-md-7">
-                <div id="map" class="border"></div>
-            </div>
-
-            <div class="col-md-4">
-                <form id="formLokasi">
-                    <div class="mb-2">
-                        <label class="form-label">Nama Lokasi</label>
-                        <input type="text" id="nama" class="form-control" required>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">Deskripsi</label>
-                        <textarea id="description" class="form-control" rows="3"></textarea>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">Foto (opsional)</label>
-                        <input type="file" id="image" class="form-control" accept="image/*">
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">Latitude</label>
-                        <input type="text" id="lat" class="form-control" readonly>
-                    </div>
-
-                    <div class="mb-2">
-                        <label class="form-label">Longitude</label>
-                        <input type="text" id="lng" class="form-control" readonly>
-                    </div>
-
-                    <button class="btn btn-primary w-100">Simpan Lokasi</button>
-                </form>
-            </div>
-        </div>
-
-        <hr>
-
-        <h5>Data Lokasi</h5>
-        <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Nama</th>
-                    <th>Deskripsi</th>
-                    <th>Foto</th>
-                    <th>Latitude</th>
-                    <th>Longitude</th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody id="dataLokasi"></tbody>
-        </table>
+    <div class="app-header border-bottom">
+        <h4 class="m-0">Web GIS Pemetaan Titik Rawan Bencana Alam di Kota Ternate, Provinsi Maluku Utara</h4>
+        <a href="/administrasi" class="btn btn-outline-primary ms-auto">Administrasi</a> 
     </div>
+
+    <div id="map"></div>
 
     <!-- Scirpt -->
     <script src="{{ asset('js/qgis2web_expressions.js') }}"></script>
@@ -135,24 +86,9 @@
     <script src="{{ asset('data/ADMINISTRASI_LN_50K_30.js') }}"></script>
     <script src="{{ asset('js/malutmap.js') }}"></script>
     <script>
-
-        let markerTemp = null;
-
-        // ensure map exists
+        // malutmap.js should initialize a global `map` using #map element
         if (typeof map === 'undefined') console.error('map is not defined (malutmap.js did not initialize)');
 
-        // klik map → isi koordinat
-        if (typeof map !== 'undefined') {
-            map.on('click', e => {
-                document.getElementById('lat').value = e.latlng.lat;
-                document.getElementById('lng').value = e.latlng.lng;
-
-                if (markerTemp) map.removeLayer(markerTemp);
-                markerTemp = L.marker(e.latlng).addTo(map);
-            });
-        }
-
-        // load data
         function loadData() {
             fetch('/locations')
                 .then(r => {
@@ -160,9 +96,7 @@
                     return r.json();
                 })
                 .then(data => {
-                    console.log('locations:', data);
-                    const table = document.getElementById('dataLokasi');
-                    table.innerHTML = '';
+                    console.log('locations (main-map):', data);
                     data.forEach(d => {
                         const lat = parseFloat(d.latitude);
                         const lng = parseFloat(d.longitude);
@@ -178,58 +112,13 @@
                         } else {
                             console.warn('Skipping marker, invalid coordinates for', d);
                         }
-
-                        table.innerHTML += `
-                <tr>
-                    <td>${d.nama}</td>
-                    <td>${d.description ? d.description : ''}</td>
-                    <td>${d.image ? `<img src="/storage/${d.image}" style="max-width:100px;"/>` : ''}</td>
-                    <td>${d.latitude}</td>
-                    <td>${d.longitude}</td>
-                    <td>
-                        <button class="btn btn-danger btn-sm"
-                            onclick="hapus(${d.id})">Hapus</button>
-                    </td>
-                </tr>
-            `;
                     });
                 })
                 .catch(err => console.error('Failed to load locations:', err));
         }
+
         loadData();
-
-        // simpan
-        document.getElementById('formLokasi').onsubmit = e => {
-            e.preventDefault();
-
-            const formData = new FormData();
-            formData.append('nama', nama.value);
-            formData.append('latitude', lat.value);
-            formData.append('longitude', lng.value);
-            formData.append('description', description.value);
-            const file = document.getElementById('image').files[0];
-            if (file) formData.append('image', file);
-
-            fetch('/locations', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: formData
-            }).then(() => location.reload());
-        }
-
-        // hapus
-        function hapus(id) {
-            fetch(`/locations/${id}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            }).then(() => location.reload());
-        }
     </script>
-
 
 </body>
 

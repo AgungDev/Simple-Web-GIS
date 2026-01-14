@@ -7,7 +7,9 @@ use App\Http\Controllers\LocationController;
 //     return view('welcome');
 // });
 
-Route::get('/', fn() => view('map'));
+Route::get('/administrasi', fn() => view('map'));
+
+Route::get('/', fn() => view('main_map'));
 
 Route::post('/locations', [LocationController::class, 'store']);
 Route::get('/locations', [LocationController::class, 'index']);

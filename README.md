@@ -17,7 +17,7 @@ atau
 docker compose up --build
 ```
 
-### Database
+### Database & Config
 
 Jika ingin cek database, di sini.
 
@@ -25,4 +25,10 @@ Jika ingin cek database, di sini.
 docker compose exec postgres psql -U webgis -d webgi
 \dt
 select * from location;
+```
+
+Jika ingin migrate
+
+```sh
+docker exec -it laravel-webgis php artisan migrate
 ```
